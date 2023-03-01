@@ -2,15 +2,27 @@ package com.mikekrysan.module28_4
 
 import android.graphics.Rect
 import android.os.Bundle
-import android.transition.*
-import android.util.TypedValue
+import android.transition.Explode
+import android.transition.Transition
+import android.transition.TransitionManager
+import android.transition.Visibility.MODE_IN
+import android.transition.Visibility.MODE_OUT
+import android.util.Log
+import android.view.View
+import android.view.View.*
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.Toast
+import android.widget.TableRow
+import androidx.annotation.IntDef
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.transition.addListener
+import androidx.core.view.children
+import androidx.core.view.forEach
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+
+    lateinit var adapter: MyAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -48,19 +60,64 @@ class MainActivity : AppCompatActivity() {
 
         //Пример с TransitionSet из ChangeBounds и ChangeImageTransform
         //переменная отвечающая за текущее состояние: расширенное или нет
-        var expanded = false
-        val transitionSet = TransitionSet()
-            .addTransition(ChangeBounds())  //отвечает за изменение расположения
-            .addTransition(ChangeImageTransform())  //отвечает за изменение высоты и ширины
+//        var expanded = false
+//        val transitionSet = TransitionSet()
+//            .addTransition(ChangeBounds())  //отвечает за изменение расположения
+//            .addTransition(ChangeImageTransform())  //отвечает за изменение высоты и ширины
+//
+//        img.setOnClickListener {
+//            expanded = !expanded    //при нажатии изменяем состояние на противоположное значение
+//            TransitionManager.beginDelayedTransition(root, transitionSet)
+//            val params: ViewGroup.LayoutParams = img.layoutParams
+//            params.height = if (expanded) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
+//            img.layoutParams = params
+//
+//            img.scaleType = if (expanded) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER
+//        }
 
-        img.setOnClickListener {
-            expanded = !expanded    //при нажатии изменяем состояние на противоположное значение
-            TransitionManager.beginDelayedTransition(root, transitionSet)
-            val params: ViewGroup.LayoutParams = img.layoutParams
-            params.height = if (expanded) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
-            img.layoutParams = params
+        //Пример 2. Explode Transition - Множество объектов на экране разлетаются в разные стороны при нажатии на одном из элементов
 
-            img.scaleType = if (expanded) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER
+        //Ставится пустой emptyAdapter который не содержит элемнтов. Когда объекты разлетаются, на сцене не должно быть объектов
+        val emptyAdapter = MyAdapter(0)
+        //наш обычный адаптер содержит 9 элементов. Передаем обработчик нажатия:
+        adapter = MyAdapter(9) {
+            //при нажатии мы получаем Rect как viewRect
+            val viewRect = Rect()
+            // как элемент, по которому нажали
+            it.getGlobalVisibleRect(viewRect)
+            //Создаем explodeOut, создаем видимость анимации, MODE, и реализуем эпицентр Callback(), который возвращает viewRect
+            val explodeOut = Explode().apply {
+                mode = MODE_OUT; duration = 1200;
+                epicenterCallback = object : Transition.EpicenterCallback() {
+                    override fun onGetEpicenter(transition: Transition?): Rect {
+                        return viewRect
+                    }
+                }
+            }
+            //то-же самое с explodeIn
+            val explodeIn = Explode().apply {
+                mode = MODE_IN; duration = 1200;
+                epicenterCallback = object : Transition.EpicenterCallback() {
+                    override fun onGetEpicenter(transition: Transition?): Rect {
+                        return viewRect
+                    }
+                }
+            }
+
+            //на explodeOut вешаем обработчик событий. Когда transition заканчивается adapter меняется на адаптер без элементов
+
+            explodeOut.addListener({ _ ->
+                TransitionManager.beginDelayedTransition(recycler_view, explodeIn)
+                recycler_view.adapter = adapter
+                it.setBackgroundResource(R.color.teal_200)
+            })
+            //запускаем transition explodeOut меняя адаптер на emptyAdapter
+            TransitionManager.beginDelayedTransition(recycler_view, explodeOut)
+            recycler_view.adapter = emptyAdapter
+            it.setBackgroundResource(com.google.android.material.R.color.design_default_color_primary_variant)
         }
+E
+        //Изначально адаптер равен наполненному кубиками адаптеру
+        recycler_view.adapter = adapter
     }
 }
