@@ -31,19 +31,36 @@ class MainActivity : AppCompatActivity() {
 //        }
 
         //Пример с ChangeImageTransform
-        img.scaleX = 0.5F
-        img.scaleY = 0.5F
-        //Счетчик который отвечает за текущий вариант scaleType
-        var i = 0
-        img.setOnClickListener {
-            TransitionManager.beginDelayedTransition(root, ChangeImageTransform())
-            //Меняем scaleType на значение этого перечисления scaleType как i - остаток от деления колечества элементов в этом перечислении
-            img.scaleType = ImageView.ScaleType.values()[i % ImageView.ScaleType.values().size]
-            //В зависимости от scaleType будет менятся изображение
-            i++
-            //выводим тост, какой сейчас scaleType на картинке
-            Toast.makeText(this, img.scaleType.name, Toast.LENGTH_SHORT).show()
-        }
+//        img.scaleX = 0.5F
+//        img.scaleY = 0.5F
+//        //Счетчик который отвечает за текущий вариант scaleType
+//        var i = 0
+//        img.setOnClickListener {
+//            TransitionManager.beginDelayedTransition(root, ChangeImageTransform())
+//            //Меняем scaleType на значение этого перечисления scaleType как i - остаток от деления колечества элементов в этом перечислении
+//            img.scaleType = ImageView.ScaleType.values()[i % ImageView.ScaleType.values().size]
+//            //В зависимости от scaleType будет менятся изображение
+//            i++
+//            //выводим тост, какой сейчас scaleType на картинке
+//            Toast.makeText(this, img.scaleType.name, Toast.LENGTH_SHORT).show()
+//        }
 
+
+        //Пример с TransitionSet из ChangeBounds и ChangeImageTransform
+        //переменная отвечающая за текущее состояние: расширенное или нет
+        var expanded = false
+        val transitionSet = TransitionSet()
+            .addTransition(ChangeBounds())  //отвечает за изменение расположения
+            .addTransition(ChangeImageTransform())  //отвечает за изменение высоты и ширины
+
+        img.setOnClickListener {
+            expanded = !expanded    //при нажатии изменяем состояние на противоположное значение
+            TransitionManager.beginDelayedTransition(root, transitionSet)
+            val params: ViewGroup.LayoutParams = img.layoutParams
+            params.height = if (expanded) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
+            img.layoutParams = params
+
+            img.scaleType = if (expanded) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER
+        }
     }
 }
